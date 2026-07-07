@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import {
   effectiveRsvpRows,
   formatRsvpReportDate,
@@ -221,14 +221,7 @@ export function AdminDashboardPage() {
   }, [rsvpReportRows])
 
   if (!sb) {
-    return (
-      <div className="admin-shell admin-panel">
-        <p>Supabase não configurado.</p>
-        <Link className="admin-link" to="/">
-          Voltar
-        </Link>
-      </div>
-    )
+    return <Navigate to="/admin/login" replace />
   }
 
   return (

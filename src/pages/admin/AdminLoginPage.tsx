@@ -33,22 +33,6 @@ export function AdminLoginPage() {
     }
   }, [sb])
 
-  if (!sb) {
-    return (
-      <div className="admin-shell admin-panel">
-        <h1 className="admin-h1">Admin</h1>
-        <p className="admin-muted">
-          Configure <code className="inline-code">VITE_SUPABASE_URL</code> e{' '}
-          <code className="inline-code">VITE_SUPABASE_ANON_KEY</code> no arquivo{' '}
-          <code className="inline-code">.env</code>.
-        </p>
-        <Link className="admin-link" to="/">
-          Voltar ao site
-        </Link>
-      </div>
-    )
-  }
-
   if (redirect) {
     return <Navigate to={from} replace />
   }
@@ -56,6 +40,10 @@ export function AdminLoginPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (!sb) {
+      setError('Não foi possível entrar. Tente novamente mais tarde.')
+      return
+    }
     setBusy(true)
     try {
       const { error: signErr } = await sb.auth.signInWithPassword({

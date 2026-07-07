@@ -21,8 +21,7 @@ function normalizeForSearch(s: string): string {
 }
 
 export function RsvpPage() {
-  const { guests: invitedGuests, loading: guestsLoading, error: guestsError } =
-    usePublicInvitedGuests()
+  const { guests: invitedGuests, loading: guestsLoading } = usePublicInvitedGuests()
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<InvitedGuest | null>(null)
   const [attending, setAttending] = useState<'yes' | 'no' | null>(null)
@@ -200,12 +199,6 @@ export function RsvpPage() {
           </p>
         ) : (
           <form className="rsvp-form" onSubmit={onSubmit} noValidate>
-            {guestsError ? (
-              <div className="alert" role="alert">
-                Não foi possível carregar a lista de convidados. Estamos
-                exibindo a lista local de reserva.
-              </div>
-            ) : null}
             {invitedGuests.length === 0 ? (
               <p className="rsvp-hint rsvp-hint--warn" role="status">
                 A lista de convidados ainda não está disponível. Entre em contato

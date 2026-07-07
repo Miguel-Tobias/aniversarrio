@@ -42,7 +42,7 @@ export async function submitRsvpToSupabase(
     return {
       ok: false,
       message:
-        'Supabase não está configurado no site. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env.',
+        'Não foi possível registrar sua resposta. Tente novamente em instantes.',
     }
   }
 
