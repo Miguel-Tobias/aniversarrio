@@ -1,0 +1,425 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import * as XLSX from 'xlsx'
+import { formatCatalogDbError } from './weddingCatalog'
+
+export type SheetRow = Record<string, string>
+
+export type GuestImportRow = {
+  id: string
+  name: string
+  sort_order: number
+  lineNumber: number
+}
+
+export type GiftImportRow = {
+  id: string
+  title: string
+  description: string
+  price: number
+  sort_order: number
+  lineNumber: number
+}
+
+export type ImportValidationError = {
+  line: number
+  message: string
+}
+
+export type ImportResult = {
+  inserted: number
+  updated: number
+  errors: string[]
+}
+
+function normalizeHeader(h: string): string {
+  return h
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '_')
+}
+
+function slugFromLabel(s: string): string {
+  const base = s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 72)
+  return base || `item-${crypto.randomUUID().slice(0, 8)}`
+}
+
+function uniqueSlug(base: string, used: Set<string>): string {
+  let id = slugFromLabel(base)
+  if (!used.has(id)) {
+    used.add(id)
+    return id
+  }
+  let n = 2
+  while (used.has(`${id}-${n}`)) n += 1
+  const next = `${id}-${n}`
+  used.add(next)
+  return next
+}
+
+function parsePrice(raw: string): number | null {
+  let t = raw
+    .trim()
+    .replace(/[Rr]\$\s*/g, '')
+    .replace(/\s/g, '')
+  if (/,\d{1,2}$/.test(t)) {
+    t = t.replace(/\./g, '').replace(',', '.')
+  } else {
+    t = t.replace(',', '.')
+  }
+  if (t === '') return null
+  const n = Number(t)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return Math.round(n * 100) / 100
+}
+
+function parseSort(raw: string, fallback: number): number {
+  const t = raw.trim()
+  if (t === '') return fallback
+  const n = Number(t.replace(',', '.'))
+  return Number.isFinite(n) ? Math.trunc(n) : fallback
+}
+
+function detectDelimiter(line: string): ',' | ';' {
+  const semi = (line.match(/;/g) ?? []).length
+  const comma = (line.match(/,/g) ?? []).length
+  return semi >= comma ? ';' : ','
+}
+
+function parseCsvLine(line: string, delim: ',' | ';'): string[] {
+  const out: string[] = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"'
+          i += 1
+        } else {
+          inQuotes = false
+        }
+      } else {
+        cur += ch
+      }
+      continue
+    }
+    if (ch === '"') {
+      inQuotes = true
+      continue
+    }
+    if (ch === delim) {
+      out.push(cur.trim())
+      cur = ''
+      continue
+    }
+    cur += ch
+  }
+  out.push(cur.trim())
+  return out
+}
+
+export function parseCsvText(text: string): { headers: string[]; rows: SheetRow[] } {
+  const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = normalized.split('\n').filter((l) => l.trim() !== '')
+  if (lines.length === 0) {
+    return { headers: [], rows: [] }
+  }
+  const delim = detectDelimiter(lines[0])
+  const headers = parseCsvLine(lines[0], delim).map((h) => h.trim())
+  const rows: SheetRow[] = []
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvLine(lines[i], delim)
+    if (cells.every((c) => c.trim() === '')) continue
+    const row: SheetRow = {}
+    headers.forEach((h, idx) => {
+      row[h] = cells[idx] ?? ''
+    })
+    rows.push(row)
+  }
+  return { headers, rows }
+}
+
+export function parseXlsxBuffer(buffer: ArrayBuffer): { headers: string[]; rows: SheetRow[] } {
+  const wb = XLSX.read(buffer, { type: 'array' })
+  const sheetName = wb.SheetNames[0]
+  if (!sheetName) return { headers: [], rows: [] }
+  const sheet = wb.Sheets[sheetName]
+  const matrix = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, {
+    header: 1,
+    defval: '',
+    raw: false,
+  })
+  if (matrix.length === 0) return { headers: [], rows: [] }
+  const headerRow = matrix[0] ?? []
+  const headers = headerRow.map((c) => String(c ?? '').trim())
+  const rows: SheetRow[] = []
+  for (let i = 1; i < matrix.length; i += 1) {
+    const line = matrix[i] ?? []
+    if (line.every((c) => String(c ?? '').trim() === '')) continue
+    const row: SheetRow = {}
+    headers.forEach((h, idx) => {
+      row[h] = String(line[idx] ?? '').trim()
+    })
+    rows.push(row)
+  }
+  return { headers, rows }
+}
+
+export async function parseSpreadsheetFile(
+  file: File,
+): Promise<{ headers: string[]; rows: SheetRow[] }> {
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.csv')) {
+    const text = await file.text()
+    return parseCsvText(text)
+  }
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    const buffer = await file.arrayBuffer()
+    return parseXlsxBuffer(buffer)
+  }
+  throw new Error('Formato não suportado. Use CSV ou Excel (.xlsx).')
+}
+
+const GUEST_FIELDS = new Map<string, 'id' | 'name' | 'sort_order'>([
+  ['id', 'id'],
+  ['nome', 'name'],
+  ['name', 'name'],
+  ['convidado', 'name'],
+  ['ordem', 'sort_order'],
+  ['order', 'sort_order'],
+  ['sort', 'sort_order'],
+  ['sort_order', 'sort_order'],
+])
+
+const GIFT_FIELDS = new Map<string, 'id' | 'title' | 'description' | 'price' | 'sort_order'>([
+  ['id', 'id'],
+  ['titulo', 'title'],
+  ['título', 'title'],
+  ['title', 'title'],
+  ['presente', 'title'],
+  ['descricao', 'description'],
+  ['descrição', 'description'],
+  ['description', 'description'],
+  ['desc', 'description'],
+  ['preco', 'price'],
+  ['preço', 'price'],
+  ['price', 'price'],
+  ['valor', 'price'],
+  ['ordem', 'sort_order'],
+  ['order', 'sort_order'],
+  ['sort', 'sort_order'],
+  ['sort_order', 'sort_order'],
+])
+
+function mapRow(
+  raw: SheetRow,
+  fieldMap: Map<string, string>,
+): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [header, value] of Object.entries(raw)) {
+    const key = fieldMap.get(header)
+    if (key) out[key] = String(value ?? '').trim()
+  }
+  return out
+}
+
+function buildFieldMap(
+  headers: string[],
+  aliases: Map<string, string>,
+): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const h of headers) {
+    const field = aliases.get(normalizeHeader(h))
+    if (field) map.set(h, field)
+  }
+  return map
+}
+
+export function validateGuestRows(
+  headers: string[],
+  rows: SheetRow[],
+): { rows: GuestImportRow[]; errors: ImportValidationError[] } {
+  const fieldMap = buildFieldMap(headers, GUEST_FIELDS)
+  if (![...fieldMap.values()].includes('name')) {
+    return {
+      rows: [],
+      errors: [{ line: 1, message: 'A planilha precisa da coluna «Nome».' }],
+    }
+  }
+  const usedIds = new Set<string>()
+  const parsed: GuestImportRow[] = []
+  const errors: ImportValidationError[] = []
+
+  rows.forEach((raw, idx) => {
+    const line = idx + 2
+    const m = mapRow(raw, fieldMap)
+    const name = m.name?.trim() ?? ''
+    if (!name) {
+      errors.push({ line, message: 'Nome vazio.' })
+      return
+    }
+    const explicitId = m.id?.trim() ?? ''
+    const id = explicitId || uniqueSlug(name, usedIds)
+    if (explicitId) usedIds.add(id)
+    const sort_order = parseSort(m.sort_order ?? '', (parsed.length + 1) * 10)
+    parsed.push({ id, name, sort_order, lineNumber: line })
+  })
+
+  return { rows: parsed, errors }
+}
+
+export function validateGiftRows(
+  headers: string[],
+  rows: SheetRow[],
+): { rows: GiftImportRow[]; errors: ImportValidationError[] } {
+  const fieldMap = buildFieldMap(headers, GIFT_FIELDS)
+  if (![...fieldMap.values()].includes('title')) {
+    return {
+      rows: [],
+      errors: [{ line: 1, message: 'A planilha precisa da coluna «Título».' }],
+    }
+  }
+  const usedIds = new Set<string>()
+  const parsed: GiftImportRow[] = []
+  const errors: ImportValidationError[] = []
+
+  rows.forEach((raw, idx) => {
+    const line = idx + 2
+    const m = mapRow(raw, fieldMap)
+    const title = m.title?.trim() ?? ''
+    if (!title) {
+      errors.push({ line, message: 'Título vazio.' })
+      return
+    }
+    const price = parsePrice(m.price ?? '')
+    if (price === null) {
+      errors.push({ line, message: `Preço inválido em «${title}».` })
+      return
+    }
+    const explicitId = m.id?.trim() ?? ''
+    const id = explicitId || uniqueSlug(title, usedIds)
+    if (explicitId) usedIds.add(id)
+    const sort_order = parseSort(m.sort_order ?? '', (parsed.length + 1) * 10)
+    parsed.push({
+      id,
+      title,
+      description: m.description?.trim() ?? '',
+      price,
+      sort_order,
+      lineNumber: line,
+    })
+  })
+
+  return { rows: parsed, errors }
+}
+
+function downloadCsv(filename: string, content: string) {
+  const blob = new Blob([`\uFEFF${content}`], {
+    type: 'text/csv;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export function downloadGuestsTemplate() {
+  downloadCsv(
+    'modelo-convidados.csv',
+    'Nome;Ordem\r\nMaria Silva;10\r\nJoão Santos;20\r\nFamília Oliveira;30',
+  )
+}
+
+export function downloadGiftsTemplate() {
+  downloadCsv(
+    'modelo-presentes.csv',
+    'Título;Descrição;Preço;Ordem\r\nR$ 50,00;;50;10\r\nR$ 100,00;;100;20',
+  )
+}
+
+export async function importGuestsToSupabase(
+  sb: SupabaseClient,
+  rows: GuestImportRow[],
+  existingIds: Set<string>,
+): Promise<ImportResult> {
+  let inserted = 0
+  let updated = 0
+  const errors: string[] = []
+  const now = new Date().toISOString()
+
+  for (const row of rows) {
+    const payload = {
+      id: row.id,
+      name: row.name,
+      sort_order: row.sort_order,
+      updated_at: now,
+    }
+    const isUpdate = existingIds.has(row.id)
+    const { error } = isUpdate
+      ? await sb.from('wedding_invited_guests').update(payload).eq('id', row.id)
+      : await sb.from('wedding_invited_guests').insert(payload)
+
+    if (error) {
+      errors.push(`Linha ${row.lineNumber} (${row.name}): ${error.message}`)
+      continue
+    }
+    if (isUpdate) updated += 1
+    else inserted += 1
+    existingIds.add(row.id)
+  }
+
+  return { inserted, updated, errors }
+}
+
+export async function importGiftsToSupabase(
+  sb: SupabaseClient,
+  rows: GiftImportRow[],
+  existingIds: Set<string>,
+): Promise<ImportResult> {
+  let inserted = 0
+  let updated = 0
+  const errors: string[] = []
+  const now = new Date().toISOString()
+
+  for (const row of rows) {
+    const payload = {
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      price: row.price,
+      sort_order: row.sort_order,
+      updated_at: now,
+    }
+    const isUpdate = existingIds.has(row.id)
+    const { error } = isUpdate
+      ? await sb.from('wedding_gifts').update(payload).eq('id', row.id)
+      : await sb.from('wedding_gifts').insert(payload)
+
+    if (error) {
+      errors.push(
+        `Linha ${row.lineNumber} (${row.title}): ${formatCatalogDbError(error.message)}`,
+      )
+      continue
+    }
+    if (isUpdate) updated += 1
+    else inserted += 1
+    existingIds.add(row.id)
+  }
+
+  return { inserted, updated, errors }
+}

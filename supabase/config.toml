@@ -1,0 +1,3 @@
+# Edge Function opcional para registrar pagamentos manualmente no admin.
+[functions.record-paid]
+verify_jwt = false
