@@ -24,7 +24,19 @@ export const event = {
 }
 
 export const invitedGuests: InvitedGuest[] = [
-  { id: 'maria-silva', name: 'Maria Silva' },
-  { id: 'joao-santos', name: 'João Santos' },
-  { id: 'familia-oliveira', name: 'Família Oliveira' },
+  { id: 'stefany', name: 'Stefany' },
+  { id: 'ana-beatriz', name: 'Ana Beatriz' },
+  { id: 'laryssa', name: 'Laryssa' },
+  { id: 'yuri', name: 'Yuri' },
+  { id: 'ana-clara', name: 'Ana Clara' },
+  { id: 'ana-laura', name: 'Ana Laura' },
+  { id: 'fabricio', name: 'Fabrício' },
+  { id: 'lucas', name: 'Lucas' },
+  { id: 'cristian', name: 'Cristian' },
+  { id: 'namorada-do-cristian', name: 'Namorada do Cristian' },
+  { id: 'caio', name: 'Caio' },
+  { id: 'hellen', name: 'Hellen' },
+  { id: 'pedro', name: 'Pedro' },
+  { id: 'sarah', name: 'Sarah' },
+  { id: 'fernanda-e-henrique', name: 'Fernanda e o Henrique' },
 ]

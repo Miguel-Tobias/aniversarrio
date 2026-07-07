@@ -37,7 +37,19 @@ create policy "admin delete wedding invited guests" on public.wedding_invited_gu
 
 insert into public.wedding_invited_guests (id, name, sort_order)
 values
-  ('maria-silva', 'Maria Silva', 10),
-  ('joao-santos', 'João Santos', 20),
-  ('familia-oliveira', 'Família Oliveira', 30)
+  ('stefany', 'Stefany', 10),
+  ('ana-beatriz', 'Ana Beatriz', 20),
+  ('laryssa', 'Laryssa', 30),
+  ('yuri', 'Yuri', 40),
+  ('ana-clara', 'Ana Clara', 50),
+  ('ana-laura', 'Ana Laura', 60),
+  ('fabricio', 'Fabrício', 70),
+  ('lucas', 'Lucas', 80),
+  ('cristian', 'Cristian', 90),
+  ('namorada-do-cristian', 'Namorada do Cristian', 100),
+  ('caio', 'Caio', 110),
+  ('hellen', 'Hellen', 120),
+  ('pedro', 'Pedro', 130),
+  ('sarah', 'Sarah', 140),
+  ('fernanda-e-henrique', 'Fernanda e o Henrique', 150)
 on conflict (id) do nothing;
