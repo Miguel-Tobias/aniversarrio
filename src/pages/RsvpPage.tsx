@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
-import { CoupleLogo } from '../components/CoupleLogo'
+import { EventNameLogo } from '../components/EventNameLogo'
 import { FlamengoPattern } from '../components/FlamengoPattern'
 import { type InvitedGuest, event } from '../config'
 import { usePublicInvitedGuests } from '../hooks/usePublicInvitedGuests'
@@ -141,7 +141,7 @@ export function RsvpPage() {
         <FlamengoPattern tone="dark" />
         <div className="page-hero__inner">
           <div className="page-hero__eyebrow page-hero__eyebrow--logo">
-            <CoupleLogo variant="banner" />
+            <EventNameLogo variant="banner" />
           </div>
           <h1 className="page-hero__title">Confirmar presença</h1>
           <p className="page-hero__lead">
@@ -171,11 +171,11 @@ export function RsvpPage() {
             <p className="rsvp-success__text">
               {remote
                 ? wasUpdate
-                  ? 'Sua resposta foi atualizada com sucesso. Obrigado por nos ajudar na organização deste grande dia.'
+                  ? 'Sua resposta foi atualizada com sucesso. Obrigado por ajudar na organização da festa.'
                   : lastAttending === 'yes'
-                    ? 'Ficamos muito felizes em celebrar este momento especial com você. Mal podemos esperar para te ver no grande dia!'
+                    ? 'Ficamos muito felizes em celebrar com você. Mal podemos esperar para te ver no Studio Pub!'
                     : 'Recebemos sua resposta. Se seus planos mudarem, volte aqui e procure o mesmo nome para atualizar.'
-                : 'Copiamos o texto da confirmação. Cole em uma mensagem para os noivos.'}
+                : 'Copiamos o texto da confirmação. Cole em uma mensagem para o Miguel.'}
             </p>
             {copiedLocal ? (
               <p className="rsvp-success__copied">Texto copiado.</p>
@@ -209,14 +209,14 @@ export function RsvpPage() {
             {invitedGuests.length === 0 ? (
               <p className="rsvp-hint rsvp-hint--warn" role="status">
                 A lista de convidados ainda não está disponível. Entre em contato
-                com os noivos.
+                com quem organiza a festa.
               </p>
             ) : null}
 
             {!remote ? (
               <p className="rsvp-form__notice" role="note">
                 Ao confirmar, o texto será copiado para você enviar uma mensagem
-                aos noivos.
+                para o Miguel.
               </p>
             ) : (
               <p className="rsvp-form__notice" role="note">
@@ -272,7 +272,7 @@ export function RsvpPage() {
             {qNorm.length >= 2 && matches.length === 0 ? (
               <p className="rsvp-hint rsvp-hint--warn" role="status">
                 Não encontramos esse nome na lista. Tente outra grafia ou entre
-                em contato com os noivos.
+                em contato com quem organiza a festa.
               </p>
             ) : null}
 

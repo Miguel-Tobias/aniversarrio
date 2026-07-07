@@ -37,10 +37,6 @@ jobs:
           VITE_BASE_URL: ${{ vars.VITE_BASE_URL }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_PIX_KEY: ${{ secrets.VITE_PIX_KEY }}
-          VITE_PIX_MERCHANT_NAME: ${{ secrets.VITE_PIX_MERCHANT_NAME }}
-          VITE_PIX_MERCHANT_CITY: ${{ secrets.VITE_PIX_MERCHANT_CITY }}
-          VITE_PIX_MODE: ${{ secrets.VITE_PIX_MODE }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

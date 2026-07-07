@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { getSupabaseBrowserClient } from '../../lib/supabaseClient'
-import { isCurrentUserAdmin } from '../../lib/weddingCatalog'
+import { isCurrentUserAdmin } from '../../lib/eventCatalog'
 
 export function AdminLoginPage() {
   const sb = getSupabaseBrowserClient()

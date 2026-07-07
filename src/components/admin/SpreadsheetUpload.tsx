@@ -1,70 +1,24 @@
 import { useRef, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  type GiftImportRow,
   type GuestImportRow,
   type ImportValidationError,
-  downloadGiftsTemplate,
   downloadGuestsTemplate,
-  importGiftsToSupabase,
   importGuestsToSupabase,
   parseSpreadsheetFile,
-  validateGiftRows,
   validateGuestRows,
 } from '../../lib/spreadsheetImport'
 
-type Kind = 'guests' | 'gifts'
-
 type Props = {
-  kind: Kind
   sb: SupabaseClient
   existingIds: string[]
   onDone: () => void | Promise<void>
 }
 
-const copy: Record<
-  Kind,
-  {
-    title: string
-    hint: string
-    previewCols: (row: GuestImportRow | GiftImportRow) => string[]
-    previewHeaders: string[]
-  }
-> = {
-  guests: {
-    title: 'Importar planilha de convidados',
-    hint: 'Envie um CSV ou Excel (.xlsx) com as colunas Nome e Ordem (opcional: Id). Linhas com o mesmo Id atualizam o convidado existente.',
-    previewHeaders: ['Nome', 'Ordem', 'Id'],
-    previewCols: (row) => {
-      const g = row as GuestImportRow
-      return [g.name, String(g.sort_order), g.id]
-    },
-  },
-  gifts: {
-    title: 'Importar planilha de presentes',
-    hint: 'Envie um CSV ou Excel (.xlsx) com Título, Descrição, Preço e Ordem (opcional: Id, Imagem com link do Google Drive ou URL). Presentes com o mesmo Id são atualizados — o Id não deve ser alterado se já houver pagamentos.',
-    previewHeaders: ['Título', 'Preço', 'Ordem', 'Id'],
-    previewCols: (row) => {
-      const g = row as GiftImportRow
-      return [
-        g.title,
-        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-          g.price,
-        ),
-        String(g.sort_order),
-        g.id,
-      ]
-    },
-  },
-}
-
-export function SpreadsheetUpload({ kind, sb, existingIds, onDone }: Props) {
+export function SpreadsheetUpload({ sb, existingIds, onDone }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const meta = copy[kind]
   const [fileName, setFileName] = useState<string | null>(null)
-  const [parsedRows, setParsedRows] = useState<(GuestImportRow | GiftImportRow)[]>(
-    [],
-  )
+  const [parsedRows, setParsedRows] = useState<GuestImportRow[]>([])
   const [validationErrors, setValidationErrors] = useState<ImportValidationError[]>(
     [],
   )
@@ -93,10 +47,7 @@ export function SpreadsheetUpload({ kind, sb, existingIds, onDone }: Props) {
         setParseError('A planilha está vazia.')
         return
       }
-      const validated =
-        kind === 'guests'
-          ? validateGuestRows(headers, rows)
-          : validateGiftRows(headers, rows)
+      const validated = validateGuestRows(headers, rows)
       setFileName(file.name)
       setParsedRows(validated.rows)
       setValidationErrors(validated.errors)
@@ -117,14 +68,7 @@ export function SpreadsheetUpload({ kind, sb, existingIds, onDone }: Props) {
     setImportResult(null)
     try {
       const idSet = new Set(existingIds)
-      const result =
-        kind === 'guests'
-          ? await importGuestsToSupabase(
-              sb,
-              parsedRows as GuestImportRow[],
-              idSet,
-            )
-          : await importGiftsToSupabase(sb, parsedRows as GiftImportRow[], idSet)
+      const result = await importGuestsToSupabase(sb, parsedRows, idSet)
 
       const parts: string[] = []
       if (result.inserted > 0) parts.push(`${result.inserted} adicionado(s)`)
@@ -153,17 +97,14 @@ export function SpreadsheetUpload({ kind, sb, existingIds, onDone }: Props) {
 
   return (
     <div className="admin-import">
-      <h3 className="admin-h3">{meta.title}</h3>
-      <p className="admin-section__hint admin-import__hint">{meta.hint}</p>
+      <h3 className="admin-h3">Importar planilha de convidados</h3>
+      <p className="admin-section__hint admin-import__hint">
+        Envie um CSV ou Excel (.xlsx) com as colunas Nome e Ordem (opcional: Id).
+        Linhas com o mesmo Id atualizam o convidado existente.
+      </p>
 
       <div className="admin-import__actions">
-        <button
-          type="button"
-          className="admin-btn-ghost"
-          onClick={() =>
-            kind === 'guests' ? downloadGuestsTemplate() : downloadGiftsTemplate()
-          }
-        >
+        <button type="button" className="admin-btn-ghost" onClick={() => downloadGuestsTemplate()}>
           Baixar modelo (CSV)
         </button>
         <label className="admin-btn-primary admin-import__file-label">
@@ -216,17 +157,17 @@ export function SpreadsheetUpload({ kind, sb, existingIds, onDone }: Props) {
             <table className="admin-table admin-table--compact">
               <thead>
                 <tr>
-                  {meta.previewHeaders.map((h) => (
-                    <th key={h}>{h}</th>
-                  ))}
+                  <th>Nome</th>
+                  <th>Ordem</th>
+                  <th>Id</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.map((row) => (
                   <tr key={row.id}>
-                    {meta.previewCols(row).map((cell, i) => (
-                      <td key={`${row.id}-${i}`}>{cell}</td>
-                    ))}
+                    <td>{row.name}</td>
+                    <td>{row.sort_order}</td>
+                    <td>{row.id}</td>
                   </tr>
                 ))}
               </tbody>

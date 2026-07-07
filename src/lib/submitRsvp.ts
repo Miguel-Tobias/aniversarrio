@@ -42,7 +42,7 @@ export async function submitRsvpToSupabase(
     return {
       ok: false,
       message:
-        'Supabase não está configurado no site. Corra o SQL em supabase/migrations/002_rsvp_responses.sql e defina VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, ou confirme a presença por mensagem direta aos noivos.',
+        'Supabase não está configurado no site. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env.',
     }
   }
 

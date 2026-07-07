@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { CoupleLogo } from './CoupleLogo'
+import { EventNameLogo } from './EventNameLogo'
 import { FlamengoPattern } from './FlamengoPattern'
 import { event } from '../config'
 
@@ -51,7 +51,7 @@ export function Layout() {
             end
             onClick={closeMenu}
           >
-            <CoupleLogo variant="nav" />
+            <EventNameLogo variant="nav" />
           </NavLink>
 
           <button

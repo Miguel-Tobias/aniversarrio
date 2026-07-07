@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  parseCsvText,
-  validateGiftRows,
-  validateGuestRows,
-} from './spreadsheetImport'
+import { parseCsvText, validateGuestRows } from './spreadsheetImport'
 
 describe('spreadsheetImport', () => {
   it('parseia CSV com separador ponto e vírgula', () => {
@@ -22,22 +18,5 @@ describe('spreadsheetImport', () => {
     expect(rows[0].name).toBe('João Santos')
     expect(rows[0].id).toBe('joao-santos')
     expect(rows[0].sort_order).toBe(20)
-  })
-
-  it('valida presentes com preço em formato brasileiro', () => {
-    const { rows, errors } = validateGiftRows(
-      ['Título', 'Descrição', 'Preço', 'Ordem'],
-      [
-        {
-          Título: 'Cafeteira',
-          Descrição: 'Manhãs especiais',
-          Preço: '1.200,50',
-          Ordem: '30',
-        },
-      ],
-    )
-    expect(errors).toHaveLength(0)
-    expect(rows[0].price).toBe(1200.5)
-    expect(rows[0].title).toBe('Cafeteira')
   })
 })

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { CoupleLogo } from '../components/CoupleLogo'
+import { EventNameLogo } from '../components/EventNameLogo'
 import { FlamengoPattern } from '../components/FlamengoPattern'
 import { event } from '../config'
 
@@ -14,20 +14,16 @@ export function HomePage() {
             {event.eventLabel} · {event.years} anos
           </p>
           <h1 className="hero__title-logo">
-            <CoupleLogo variant="hero" />
+            <EventNameLogo variant="hero" />
           </h1>
           <p className="hero__date">{event.date}</p>
           <p className="hero__venue">{event.venue}</p>
           <p className="hero__time">{event.timeDetail}</p>
-          <p className="hero__venue">Sua presença é muito importante para nós.</p>
+          <p className="hero__venue">Sua presença é muito importante para mim.</p>
           <div className="hero__cta-row">
             <Link className="hero__cta hero__cta--primary" to="/confirmar">
               Confirmar minha presença
             </Link>
-          </div>
-          <div className="hero__ornament" aria-hidden>
-            <span className="hero__ring" />
-            <span className="hero__ring hero__ring--second" />
           </div>
         </div>
       </header>

@@ -9,14 +9,7 @@ function normalizeBase(raw: string | undefined): string {
   return b
 }
 
-// https://vite.dev/config/
 export default defineConfig({
   base: normalizeBase(process.env.VITE_BASE_URL),
   plugins: [react()],
-  resolve: {
-    alias: {
-      // pix-utils importa `buffer` via dynamicPayload; sem polyfill o bundle pode falhar no browser
-      buffer: 'buffer/',
-    },
-  },
 })

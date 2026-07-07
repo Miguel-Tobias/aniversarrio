@@ -3,7 +3,7 @@ import {
   invitedGuests as fallbackGuests,
   type InvitedGuest,
 } from '../config'
-import { fetchInvitedGuestsFromSupabase } from '../lib/weddingCatalog'
+import { fetchInvitedGuestsFromSupabase } from '../lib/eventCatalog'
 import { supabaseConfigured } from '../lib/supabaseClient'
 
 export function usePublicInvitedGuests() {
