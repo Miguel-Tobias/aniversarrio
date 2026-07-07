@@ -144,7 +144,7 @@ export function RsvpPage() {
           </div>
           <h1 className="page-hero__title">Confirmar presença</h1>
           <p className="page-hero__lead">
-            Procure seu nome na lista e nos diga se você vem à celebração. Dia{' '}
+            Procure seu nome na lista e me diga se você vem à festa. Dia{' '}
             {event.date} — {event.timeDetail}. Se marcar por engano, você
             pode voltar aqui depois para{' '}
             <strong>alterar sua resposta</strong>.
@@ -213,9 +213,8 @@ export function RsvpPage() {
               </p>
             ) : (
               <p className="rsvp-form__notice" role="note">
-                Cada confirmação nos ajuda a preparar tudo com muito carinho.
-                Procure seu nome na lista — sua resposta fica salva com segurança
-                e pode ser alterada a qualquer momento.
+                Procure seu nome na lista e confirme se você vem. Pode voltar
+                aqui depois para alterar sua resposta.
               </p>
             )}
 

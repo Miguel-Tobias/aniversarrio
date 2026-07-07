@@ -187,10 +187,7 @@ export function AdminDashboardPage() {
         .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (error) {
-        window.alert(
-          `Não foi possível apagar as confirmações: ${error.message}\n\n` +
-            'Se o erro mencionar permissão, execute no Supabase o arquivo supabase/migrations/009_admin_rsvp_delete.sql.',
-        )
+        window.alert(`Não foi possível apagar as confirmações: ${error.message}`)
         return
       }
       await reload()
@@ -378,10 +375,6 @@ export function AdminDashboardPage() {
             {rsvpLoadError ? (
               <div className="alert admin-alert" role="alert">
                 <strong>Não foi possível carregar as confirmações:</strong> {rsvpLoadError}
-                <p className="admin-muted admin-rsvp-migration-note">
-                  Se o erro mencionar permissões, execute no Supabase o arquivo{' '}
-                  <code className="inline-code">supabase/migrations/006_rsvp_policies_fix.sql</code>.
-                </p>
               </div>
             ) : (
               <>

@@ -51,10 +51,8 @@ export function AdminRoute({ children }: { children: ReactNode }) {
       <div className="admin-shell admin-panel">
         <h1 className="admin-h1">Sem permissão</h1>
         <p className="admin-muted">
-          Esta conta não está na lista de administradores. No Supabase, execute:{' '}
-          <code className="inline-code">
-            insert into app_admins (user_id) values (&apos;…uuid…&apos;);
-          </code>
+          Esta conta não tem permissão para acessar o painel. Use outra conta ou
+          fale com quem organiza a festa.
         </p>
         <a className="admin-link" href="/admin/login">
           Voltar ao login

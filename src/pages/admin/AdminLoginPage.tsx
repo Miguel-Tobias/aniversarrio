@@ -57,9 +57,7 @@ export function AdminLoginPage() {
       const admin = await isCurrentUserAdmin()
       if (!admin) {
         await sb.auth.signOut()
-        setError(
-          'Conta válida, mas sem permissão de administrador. Adicione seu user_id à tabela app_admins no Supabase.',
-        )
+        setError('Esta conta não tem permissão para acessar o painel.')
         return
       }
       setRedirect(true)
@@ -75,7 +73,7 @@ export function AdminLoginPage() {
       <div className="admin-panel admin-panel--narrow">
         <h1 className="admin-h1">Área de administração</h1>
         <p className="admin-lead">
-          Entre com a conta autorizada no Supabase.
+          Entre com seu e-mail e senha para gerenciar convidados e confirmações.
         </p>
         <form className="admin-form" onSubmit={onSubmit}>
           {error ? (
